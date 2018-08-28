@@ -1,0 +1,22 @@
+{
+  "name": "quickstart-minapp",
+  "version": "1.0.0",
+  "description": "wxminapp",
+  "main": "src/app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fupengl/quickstart-minapp.git"
+  },
+  "keywords": [
+    "wxminapp"
+  ],
+  "author": "fupeng",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fupengl/quickstart-minapp/issues"
+  },
+  "homepage": "https://github.com/fupengl/quickstart-minapp#readme"
+}
