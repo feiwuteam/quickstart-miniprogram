@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "target": "es5",
+    "noImplicitAny": true,
+    "strict": true,
+    "sourceMap": true,
+    "allowJs": true,
+    "baseUrl": "./src/",
+    "outDir": "./dist/",
+    "noImplicitThis": false
+  },
+  "lib": [
+    "es5",
+    "es2015",
+    "es2016",
+    "es2017",
+    "es2015.promise",
+    "es2015.collection",
+    "es2015.iterable",
+    "es2015.core"
+  ],
+  "declaration": true,
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "src/**/*.ts", "src/libs/base64.js", "src/libs/base64.js"
+  ],
+  "files": [
+    "src/libs/**/*.d.ts",
+    "node_modules/es6-shim"
+  ]
+}

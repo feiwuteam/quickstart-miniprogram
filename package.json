@@ -18,5 +18,10 @@
   "bugs": {
     "url": "https://github.com/fupengl/quickstart-minapp/issues"
   },
-  "homepage": "https://github.com/fupengl/quickstart-minapp#readme"
+  "homepage": "https://github.com/fupengl/quickstart-minapp#readme",
+  "devDependencies": {
+    "node-sass": "^4.9.3",
+    "sass": "^1.13.0",
+    "webpack": "^4.17.1"
+  }
 }

@@ -1,0 +1,4 @@
+src/styles/core/
+dist/
+src/**/*.ts
+src/**/*.js
