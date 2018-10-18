@@ -9,15 +9,11 @@
     "strict": true,
     "sourceMap": true,
     "allowJs": true,
-    "baseUrl": ".",
+    "baseUrl": "./src/",
     "outDir": "./dist/",
     "noImplicitThis": false,
-    "removeComments": false,
-    "paths": {
-      "@/*": ["./src/*"]
-    },
+    "removeComments": false
   },
-  "awesomeTypescriptLoaderOptions": {},
   "lib": [
     "es5",
     "es2015",
@@ -28,6 +24,7 @@
     "es2015.iterable",
     "es2015.core"
   ],
+  "awesomeTypescriptLoaderOptions": {},
   "declaration": true,
   "exclude": [
     "node_modules"

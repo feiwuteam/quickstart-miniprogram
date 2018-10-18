@@ -1,4 +1,4 @@
-import { strLen } from './index';
+import { strLen } from '.';
 
 interface ICtx {
     ctx: WXContext;

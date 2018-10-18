@@ -17,7 +17,6 @@ import CopyPlugin from 'copy-webpack-plugin';
 import pkg from '../package.json';
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import { TsConfigPathsPlugin } from 'awesome-typescript-loader';
 import SpeedMeasurePlugin from "speed-measure-webpack-plugin";
 
 const smp = new SpeedMeasurePlugin();
@@ -92,7 +91,13 @@ export default (env = {}) => {
 					include: /src/,
 					exclude: /node_modules/,
 					use: [{
-							loader: 'awesome-typescript-loader'
+							loader: 'cache-loader'
+						},
+						{
+							loader: 'thread-loader',
+							options: {
+								workers: require('os').cpus().length - 1,
+							},
 						},
 						{
 							loader: 'ts-loader',
@@ -164,17 +169,15 @@ export default (env = {}) => {
 				async: false,
 				checkSyntacticErrors: true,
 				watch: ['../src']
-			}),
-			new TsConfigPathsPlugin({
-				baseUrl: ".."
 			})
 		].filter(Boolean),
 		devtool: isDev ? 'source-map' : false,
 		resolve: {
-			modules: [resolve(__dirname, 'src'), 'node_modules'],
+			modules: [resolve(__dirname, '..'), 'node_modules'],
 			extensions: ['.ts', '.js'],
 			alias: {
-				'@': resolve(__dirname, 'src')
+				'@': resolve(__dirname, '../src'),
+				'@style': resolve(__dirname, '../src', 'styles/index.scss')
 			}
 		},
 		watchOptions: {

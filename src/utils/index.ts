@@ -125,7 +125,7 @@ export function parseTime(time: number | string | Date, cFormat?: string) {
 
 export function formatTime(time: number, option?: string) {
     time = +time * 1000;
-    const d: any = new Date(time).valueOf();
+    const d: any = new Date(time);
     const now = Date.now();
 
     const diff = (now - d) / 1000;
