@@ -21,12 +21,8 @@ warmup({}, ['ts-loader', 'babel-loader', 'tslint-loader', 'eslint-loader'])
 
 const smp = new SpeedMeasurePlugin();
 
-const {
-	NODE_ENV,
-	LINT,
-} = process.env;
+const { NODE_ENV } = process.env;
 const isDev = NODE_ENV !== 'production';
-const shouldLint = !!LINT && LINT !== 'false';
 const srcDir = resolve('src');
 
 const copyPatterns = [].concat(pkg.copyWebpack || []).map(
@@ -87,7 +83,7 @@ export default (env = {}) => {
 					{
 						loader: 'babel-loader'
 					},
-					shouldLint && {
+					{
 						loader: 'eslint-loader'
 					}
 				].filter(v => v && typeof v !== 'boolean'),
@@ -171,7 +167,7 @@ export default (env = {}) => {
 			}),
 			new optimize.ModuleConcatenationPlugin(),
 			new IgnorePlugin(/vertx/),
-			shouldLint && new StylelintPlugin(),
+			new StylelintPlugin(),
 			!isDev && new MinifyPlugin(),
 			new CopyPlugin(copyPatterns, {
 				context: srcDir
