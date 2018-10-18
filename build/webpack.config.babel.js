@@ -190,7 +190,7 @@ export default (env = {}) => {
 				tslint: true,
 				async: false,
 				checkSyntacticErrors: true,
-				watch: ['../src']
+				watch: [srcDir]
 			}),
 			new BundleAnalyzerPlugin({
 				analyzerHost: "0.0.0.0",

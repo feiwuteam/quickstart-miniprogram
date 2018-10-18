@@ -12,7 +12,7 @@
     "lint": "run-s lint:*",
     "lint:css": "stylelint './src/**/*.scss' --fix",
     "lint:ts": "tslint './src/**/*.ts' --fix",
-    "clean": "rm -rf dist/ npm-debug.log"
+    "clean": "rm -rf dist/ npm-debug.log .cache-loader"
   },
   "repository": {
     "type": "git",
