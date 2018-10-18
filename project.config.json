@@ -10,6 +10,7 @@
 		"minified": true,
 		"newFeature": true
 	},
+	"miniprogramRoot": "./dist",
 	"compileType": "miniprogram",
 	"libVersion": "2.2.4",
 	"appid": "touristappid",

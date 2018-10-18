@@ -17,7 +17,10 @@ import CopyPlugin from 'copy-webpack-plugin';
 import pkg from '../package.json';
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
+import { TsConfigPathsPlugin } from 'awesome-typescript-loader';
+import SpeedMeasurePlugin from "speed-measure-webpack-plugin";
+
+const smp = new SpeedMeasurePlugin();
 
 const {
 	NODE_ENV,
@@ -50,7 +53,7 @@ const relativeFileLoader = (ext = '[ext]') => {
 export default (env = {}) => {
 	const min = env.min;
 	const target = 'Wechat';
-	return {
+	return smp.wrap({
 		context: resolve(__dirname, '..'),
 		entry: {
 			app: ['./src/app.ts']
@@ -71,7 +74,7 @@ export default (env = {}) => {
 					use: ['babel-loader', shouldLint && 'eslint-loader'].filter(Boolean),
 				},
 				{
-					test: /\.ts$/,
+					test: /\.tsx$/,
 					enforce: 'pre',
 					exclude: [
 						/node_modules/
@@ -80,31 +83,24 @@ export default (env = {}) => {
 						loader: 'tslint-loader',
 						options: {
 							fix: true,
-							typeCheck: true,
-							configFile: './tsconfig.json',
-							configuration: './tslint.json',
+							typeCheck: true
 						}
 					}]
 				},
 				{
-					test: /\.ts?$/,
+					test: /\.tsx?$/,
 					include: /src/,
 					exclude: /node_modules/,
 					use: [{
-						loader: 'ts-loader',
-						options: {
-							transpileOnly: true,
-							happyPackMode: NODE_ENV !== 'production'
+							loader: 'awesome-typescript-loader'
+						},
+						{
+							loader: 'ts-loader',
+							options: {
+								happyPackMode: NODE_ENV !== 'production'
+							}
 						}
-					}]
-				},
-				{
-					test: /\.wxss$/,
-					include: /src/,
-					exclude: /node_modules/,
-					use: [
-						relativeFileLoader()
-					],
+					]
 				},
 				{
 					test: /\.(scss|wxss)$/,
@@ -112,21 +108,15 @@ export default (env = {}) => {
 					use: [
 						relativeFileLoader('wxss'),
 						{
-							loader: 'autoprefixer-loader',
-							options: {
-								browsers: ['Android >= 2.3', 'Chrome > 20', 'iOS >= 6']
-							}
+							loader: 'postcss-loader'
 						},
 						{
-							loader: 'sass-loader',
-							options: {
-								includePaths: [resolve(__dirname, 'src', 'style'), srcDir],
-							},
+							loader: 'sass-loader'
 						},
 					],
 				},
 				{
-					test: /\.(json|png|jpg|gif|wxss|wxs)$/,
+					test: /\.(json|png|jpg|gif|wxs)$/,
 					include: /src/,
 					use: relativeFileLoader()
 				},
@@ -175,8 +165,8 @@ export default (env = {}) => {
 				checkSyntacticErrors: true,
 				watch: ['../src']
 			}),
-			new TsconfigPathsPlugin({
-				configFile: resolve(__dirname, '..', 'tsconfig.json')
+			new TsConfigPathsPlugin({
+				baseUrl: ".."
 			})
 		].filter(Boolean),
 		devtool: isDev ? 'source-map' : false,
@@ -184,15 +174,12 @@ export default (env = {}) => {
 			modules: [resolve(__dirname, 'src'), 'node_modules'],
 			extensions: ['.ts', '.js'],
 			alias: {
-				'@': resolve(__dirname, 'src'),
-				'@components': resolve(__dirname, '../src/components'),
-				'@utils': resolve(__dirname, '../src/utils'),
-				'style': resolve(__dirname, '../src/styles/index.scss')
+				'@': resolve(__dirname, 'src')
 			}
 		},
 		watchOptions: {
 			ignored: /dist|manifest/,
 			aggregateTimeout: 300,
 		},
-	};
+	});
 };
