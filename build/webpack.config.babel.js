@@ -186,7 +186,7 @@ export default (env = {}) => {
 				context: srcDir
 			}),
 			new TSLintPlugin({
-				files: [resolve(__dirname, 'src/**/*.ts')]
+				files: [resolve(__dirname, '..', 'src/**/*.ts')]
 			}),
 			new ForkTsCheckerWebpackPlugin({
 				tslint: true,
