@@ -33,7 +33,6 @@ const smp = new SpeedMeasurePlugin();
 const {
 	NODE_ENV,
 	LINT,
-	CONF = "dev"
 } = process.env;
 const isDev = NODE_ENV !== 'production';
 const shouldLint = !!LINT && LINT !== 'false';
@@ -69,11 +68,10 @@ const speedPlugin = () => {
 				workers: require('os').cpus().length - 1
 			},
 		},
-	].filter(Boolean)
+	]
 }
 
 export default (env = {}) => {
-	const min = env.min;
 	const target = 'Wechat';
 	return smp.wrap({
 		context: resolve(__dirname, '..'),
@@ -172,7 +170,7 @@ export default (env = {}) => {
 			new FriendlyErrorsWebpackPlugin(),
 			new DefinePlugin({
 				__DEV__: isDev,
-				__ENV__: require(`../config/${CONF}.env`)
+				__ENV__: require(`../config/${Object.keys(env)[0]||'dev'}.env`)
 			}),
 			new WXAppWebpackPlugin({
 				clear: !isDev,
@@ -181,7 +179,7 @@ export default (env = {}) => {
 			new optimize.ModuleConcatenationPlugin(),
 			new IgnorePlugin(/vertx/),
 			shouldLint && new StylelintPlugin(),
-			min && new MinifyPlugin(),
+			!isDev && new MinifyPlugin(),
 			new CopyPlugin(copyPatterns, {
 				context: srcDir
 			}),
