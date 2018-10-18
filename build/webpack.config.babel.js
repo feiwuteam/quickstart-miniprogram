@@ -17,7 +17,16 @@ import CopyPlugin from 'copy-webpack-plugin';
 import pkg from '../package.json';
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import SpeedMeasurePlugin from "speed-measure-webpack-plugin";
+import SpeedMeasurePlugin from 'speed-measure-webpack-plugin';
+import {
+	BundleAnalyzerPlugin
+} from 'webpack-bundle-analyzer'
+
+import {
+	warmup
+} from 'thread-loader';
+
+warmup({}, ['ts-loader', 'babel-loader'])
 
 const smp = new SpeedMeasurePlugin();
 
@@ -49,6 +58,20 @@ const relativeFileLoader = (ext = '[ext]') => {
 	};
 };
 
+const speedPlugin = () => {
+	return [
+		isDev && {
+			loader: 'cache-loader'
+		},
+		isDev && {
+			loader: 'thread-loader',
+			options: {
+				workers: require('os').cpus().length - 1
+			},
+		},
+	].filter(Boolean)
+}
+
 export default (env = {}) => {
 	const min = env.min;
 	const target = 'Wechat';
@@ -70,7 +93,15 @@ export default (env = {}) => {
 					exclude: [
 						/node_modules/
 					],
-					use: ['babel-loader', shouldLint && 'eslint-loader'].filter(Boolean),
+					use: [
+						...speedPlugin(),
+						{
+							loader: 'babel-loader'
+						},
+						shouldLint && {
+							loader: 'eslint-loader'
+						}
+					].filter(v => v && typeof v !== 'boolean'),
 				},
 				{
 					test: /\.tsx$/,
@@ -90,22 +121,15 @@ export default (env = {}) => {
 					test: /\.tsx?$/,
 					include: /src/,
 					exclude: /node_modules/,
-					use: [{
-							loader: 'cache-loader'
-						},
-						{
-							loader: 'thread-loader',
-							options: {
-								workers: require('os').cpus().length - 1,
-							},
-						},
+					use: [
+						...speedPlugin(),
 						{
 							loader: 'ts-loader',
 							options: {
 								happyPackMode: NODE_ENV !== 'production'
 							}
 						}
-					]
+					].filter(v => v)
 				},
 				{
 					test: /\.(scss|wxss)$/,
@@ -169,6 +193,11 @@ export default (env = {}) => {
 				async: false,
 				checkSyntacticErrors: true,
 				watch: ['../src']
+			}),
+			new BundleAnalyzerPlugin({
+				analyzerHost: "0.0.0.0",
+				analyzerPort: "8888",
+				openAnalyzer: !isDev
 			})
 		].filter(Boolean),
 		devtool: isDev ? 'source-map' : false,
