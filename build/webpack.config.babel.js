@@ -1,32 +1,23 @@
-import {
-	resolve
-} from 'path';
+import { resolve } from 'path';
 import {
 	DefinePlugin,
 	EnvironmentPlugin,
 	IgnorePlugin,
 	optimize
 } from 'webpack';
-import WXAppWebpackPlugin, {
-	Targets
-} from 'wxapp-webpack-plugin';
+import WXAppWebpackPlugin, { Targets } from 'wxapp-webpack-plugin';
 import StylelintPlugin from 'stylelint-webpack-plugin';
 import MinifyPlugin from 'babel-minify-webpack-plugin';
 import TSLintPlugin from 'tslint-webpack-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
-import pkg from '../package.json';
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin';
-import {
-	BundleAnalyzerPlugin
-} from 'webpack-bundle-analyzer'
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+import { warmup } from 'thread-loader';
+import pkg from '../package.json';
 
-import {
-	warmup
-} from 'thread-loader';
-
-warmup({}, ['ts-loader', 'babel-loader'])
+warmup({}, ['ts-loader', 'babel-loader', 'tslint-loader', 'eslint-loader'])
 
 const smp = new SpeedMeasurePlugin();
 
@@ -40,10 +31,10 @@ const srcDir = resolve('src');
 
 const copyPatterns = [].concat(pkg.copyWebpack || []).map(
 	(pattern) =>
-	typeof pattern === 'string' ? {
-		from: pattern,
-		to: pattern
-	} : pattern,
+		typeof pattern === 'string' ? {
+			from: pattern,
+			to: pattern
+		} : pattern,
 );
 
 const relativeFileLoader = (ext = '[ext]') => {
@@ -57,7 +48,7 @@ const relativeFileLoader = (ext = '[ext]') => {
 	};
 };
 
-const speedPlugin = () => {
+const speedLoader = () => {
 	return [
 		isDev && {
 			loader: 'cache-loader'
@@ -86,81 +77,83 @@ export default (env = {}) => {
 		target: Targets[target],
 		module: {
 			rules: [{
-					test: /\.js$/,
-					include: /src/,
-					exclude: [
-						/node_modules/
-					],
-					use: [
-						...speedPlugin(),
-						{
-							loader: 'babel-loader'
-						},
-						shouldLint && {
-							loader: 'eslint-loader'
-						}
-					].filter(v => v && typeof v !== 'boolean'),
-				},
-				{
-					test: /\.tsx$/,
-					enforce: 'pre',
-					exclude: [
-						/node_modules/
-					],
-					use: [{
+				test: /\.js$/,
+				include: /src/,
+				exclude: [
+					/node_modules/
+				],
+				use: [
+					...speedLoader(),
+					{
+						loader: 'babel-loader'
+					},
+					shouldLint && {
+						loader: 'eslint-loader'
+					}
+				].filter(v => v && typeof v !== 'boolean'),
+			},
+			{
+				test: /\.tsx$/,
+				enforce: 'pre',
+				exclude: [
+					/node_modules/
+				],
+				use: [
+					...speedLoader(),
+					{
 						loader: 'tslint-loader',
 						options: {
 							fix: true,
 							typeCheck: true
 						}
-					}]
-				},
-				{
-					test: /\.tsx?$/,
-					include: /src/,
-					exclude: /node_modules/,
-					use: [
-						...speedPlugin(),
-						{
-							loader: 'ts-loader',
-							options: {
-								happyPackMode: NODE_ENV !== 'production'
-							}
+					}].filter(v => v && typeof v !== 'boolean')
+			},
+			{
+				test: /\.tsx?$/,
+				include: /src/,
+				exclude: /node_modules/,
+				use: [
+					...speedLoader(),
+					{
+						loader: 'ts-loader',
+						options: {
+							happyPackMode: NODE_ENV !== 'production'
 						}
-					].filter(v => v)
-				},
-				{
-					test: /\.(scss|wxss)$/,
-					include: /src/,
-					use: [
-						relativeFileLoader('wxss'),
-						{
-							loader: 'postcss-loader'
+					}
+				].filter(v => v && typeof v !== 'boolean')
+			},
+			{
+				test: /\.(scss|wxss)$/,
+				include: /src/,
+				use: [
+					relativeFileLoader('wxss'),
+					{
+						loader: 'postcss-loader'
+					},
+					{
+						loader: 'sass-loader'
+					},
+				],
+			},
+			{
+				test: /\.(json|png|jpg|gif|wxs)$/,
+				include: /src/,
+				use: relativeFileLoader()
+			},
+			{
+				test: /\.(wxml|html)$/,
+				include: /src/,
+				use: [
+					relativeFileLoader('wxml'),
+					{
+						loader: 'wxml-loader',
+						options: {
+							root: srcDir,
+							enforceRelativePath: true
 						},
-						{
-							loader: 'sass-loader'
-						},
-					],
-				},
-				{
-					test: /\.(json|png|jpg|gif|wxs)$/,
-					include: /src/,
-					use: relativeFileLoader()
-				},
-				{
-					test: /\.(wxml|html)$/,
-					include: /src/,
-					use: [
-						relativeFileLoader('wxml'),
-						{
-							loader: 'wxml-loader',
-							options: {
-								root: srcDir,
-								enforceRelativePath: true
-							},
-						},
-					],
-				},
+					},
+				],
+			},
 			],
 		},
 		plugins: [
@@ -170,7 +163,7 @@ export default (env = {}) => {
 			new FriendlyErrorsWebpackPlugin(),
 			new DefinePlugin({
 				__DEV__: isDev,
-				__ENV__: require(`../config/${Object.keys(env)[0]||'dev'}.env`)
+				__ENV__: require(`../config/${Object.keys(env)[0] || 'dev'}.env`)
 			}),
 			new WXAppWebpackPlugin({
 				clear: !isDev,
@@ -198,7 +191,7 @@ export default (env = {}) => {
 				openAnalyzer: !isDev
 			})
 		].filter(Boolean),
-		devtool: isDev ? 'source-map' : false,
+		devtool: isDev && 'source-map',
 		resolve: {
 			modules: [resolve(__dirname, '..'), 'node_modules'],
 			extensions: ['.ts', '.js'],
