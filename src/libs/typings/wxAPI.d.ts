@@ -429,15 +429,27 @@ interface WXPageObj {
 	onUnload?: Function;
 	onPullDownRefresh?: Function;
 	onReachBottom?: Function;
+	onShareAppMessage?: Function;
 	[propName: string]: any;
 }
 
 interface WXComponentObj extends WXPageObj {
 	properties?: IProperties;
+	behaviors?: Array[string];
+	externalClasses?: Array[string];
+	options?: IOptions;
+}
+
+interface IOptions {
+	[propName: string]: boolean;
 }
 
 interface IProperties {
-	[propName: string]: any;
+	[propName: string]: {
+		type: any,
+		value: Boolean | string | Object | Array,
+		observer?: Function;
+	};
 }
 
 interface WXAppObj {
@@ -488,6 +500,7 @@ interface WXEventBasic {
 	currentTarget: WXEventTarget;
 	detail: {
 		formId?: string;
+		value?: any;
 		userInfo?: Object;
 		[key: string]: any;
 	}
