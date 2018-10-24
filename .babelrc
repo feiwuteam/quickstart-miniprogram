@@ -1,16 +1,14 @@
 {
   "presets": [
-    ["es2015", {
+    ["env", {
       "loose": true
     }],
-    "stage-0",
-    "env"
+    "stage-0"
   ],
   "plugins": [
     ["transform-runtime", {
       "polyfill": true,
       "regenerator": true
-    }],
-    "lodash"
+    }]
   ]
 }

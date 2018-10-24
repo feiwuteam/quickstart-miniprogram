@@ -15,6 +15,7 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 import { warmup } from 'thread-loader';
+import HappyPack from 'happypack';
 import pkg from '../package.json';
 
 warmup({}, ['ts-loader', 'babel-loader', 'tslint-loader', 'eslint-loader'])
@@ -44,20 +45,6 @@ const relativeFileLoader = (ext = '[ext]') => {
 	};
 };
 
-const speedLoader = () => {
-	return [
-		isDev && {
-			loader: 'cache-loader'
-		},
-		isDev && {
-			loader: 'thread-loader',
-			options: {
-				workers: require('os').cpus().length - 1
-			},
-		},
-	]
-}
-
 export default (env = {}) => {
 	const target = 'Wechat';
 	return smp.wrap({
@@ -79,7 +66,6 @@ export default (env = {}) => {
 					/node_modules/
 				],
 				use: [
-					...speedLoader(),
 					{
 						loader: 'babel-loader'
 					},
@@ -94,22 +80,13 @@ export default (env = {}) => {
 				exclude: [
 					/node_modules/
 				],
-				use: [
-					...speedLoader(),
-					{
-						loader: 'tslint-loader',
-						options: {
-							fix: true,
-							typeCheck: true
-						}
-					}].filter(v => v && typeof v !== 'boolean')
+				loader: 'happypack/loader?id=ts'
 			},
 			{
 				test: /\.tsx?$/,
 				include: /src/,
 				exclude: /node_modules/,
 				use: [
-					...speedLoader(),
 					{
 						loader: 'ts-loader',
 						options: {
@@ -153,6 +130,16 @@ export default (env = {}) => {
 			],
 		},
 		plugins: [
+			new HappyPack({
+				id: 'ts',
+				threads: 2,
+				loaders: [
+					{
+						path: 'ts-loader',
+						query: { happyPackMode: true }
+					}
+				]
+			}),
 			new EnvironmentPlugin({
 				NODE_ENV: 'development',
 			}),
