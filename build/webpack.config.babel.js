@@ -65,14 +65,7 @@ export default (env = {}) => {
 				exclude: [
 					/node_modules/
 				],
-				use: [
-					{
-						loader: 'babel-loader'
-					},
-					{
-						loader: 'eslint-loader'
-					}
-				].filter(v => v && typeof v !== 'boolean'),
+				loader: 'happypack/loader?id=js'
 			},
 			{
 				test: /\.tsx$/,
@@ -130,16 +123,6 @@ export default (env = {}) => {
 			],
 		},
 		plugins: [
-			new HappyPack({
-				id: 'ts',
-				threads: 2,
-				loaders: [
-					{
-						path: 'ts-loader',
-						query: { happyPackMode: true }
-					}
-				]
-			}),
 			new EnvironmentPlugin({
 				NODE_ENV: 'development',
 			}),
@@ -167,6 +150,28 @@ export default (env = {}) => {
 				async: false,
 				checkSyntacticErrors: true,
 				watch: [srcDir]
+			}),
+			new HappyPack({
+				id: 'ts',
+				threads: 2,
+				loaders: [
+					{
+						path: 'ts-loader',
+						query: { happyPackMode: true }
+					}
+				]
+			}),
+			new HappyPack({
+				id: 'js',
+				threads: 2,
+				loaders: [
+					{
+						loader: 'babel-loader'
+					},
+					{
+						loader: 'eslint-loader'
+					}
+				]
 			}),
 			new BundleAnalyzerPlugin({
 				analyzerHost: "0.0.0.0",
