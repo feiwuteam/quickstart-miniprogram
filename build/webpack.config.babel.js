@@ -156,6 +156,9 @@ export default (env = {}) => {
 				threads: 2,
 				loaders: [
 					{
+						loader: 'cache-loader'
+					},
+					{
 						path: 'ts-loader',
 						query: { happyPackMode: true }
 					}
@@ -165,6 +168,9 @@ export default (env = {}) => {
 				id: 'js',
 				threads: 2,
 				loaders: [
+					{
+						loader: 'cache-loader'
+					},
 					{
 						loader: 'babel-loader'
 					},
