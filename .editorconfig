@@ -6,13 +6,13 @@ insert_final_newline = true
 charset = utf-8
 trim_trailing_whitespace = true
 
-[*.{js,jsx,ts}]
+[*.{js,jsx,css,less,scss}]
 indent_style = tab
 tab_width = 2
 trim_trailing_whitespace = true
 
-[*.{html,wxml,hbr,rt,css,less,scss,wxss}]
-indent_style = tab
+[*.{html,hbr,rt,sass}]
+indent_style = space
 indent_size = 2
 trim_trailing_whitespace = true
 
