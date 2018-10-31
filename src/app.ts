@@ -1,4 +1,4 @@
-import Store, { createStore } from './store';
+import Store, { createStore } from '@store/index';
 import WxApi, { promisify } from './utils/wxApi';
 
 // dispatch request lock

@@ -1,98 +1,63 @@
-import { resolve } from 'path';
-import {
-	DefinePlugin,
-	EnvironmentPlugin,
-	IgnorePlugin,
-	optimize
-} from 'webpack';
-import WXAppWebpackPlugin, { Targets } from 'wxapp-webpack-plugin';
-import StylelintPlugin from 'stylelint-webpack-plugin';
-import MinifyPlugin from 'babel-minify-webpack-plugin';
-import TSLintPlugin from 'tslint-webpack-plugin';
-import CopyPlugin from 'copy-webpack-plugin';
-import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import { join } from 'path'
+import HappyPack from 'happypack'
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin';
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
-import { warmup } from 'thread-loader';
-import HappyPack from 'happypack';
-import pkg from '../package.json';
-
-warmup({}, ['ts-loader', 'babel-loader', 'tslint-loader', 'eslint-loader'])
-
-const smp = new SpeedMeasurePlugin();
+import paths from './paths';
 
 const { NODE_ENV } = process.env;
-const isDev = NODE_ENV !== 'production';
-const srcDir = resolve('src');
+const isDev = NODE_ENV === 'development';
+const smp = new SpeedMeasurePlugin();
 
-const copyPatterns = [].concat(pkg.copyWebpack || []).map(
-	(pattern) =>
-		typeof pattern === 'string' ? {
-			from: pattern,
-			to: pattern
-		} : pattern,
-);
+const relativeFileLoader = ({
+	loadername = 'file',
+	ext = '[ext]',
+	options = {}
+} = {}) => ({
+	loader: `${loadername}-loader`,
+	options: {
+		name: `[name].${ext}`,
+		context: paths.appSrc,
+		useRelativePath: true,
+		...options
+	},
+});
 
-const relativeFileLoader = (ext = '[ext]') => {
-	return {
-		loader: 'file-loader',
-		options: {
-			useRelativePath: true,
-			name: `[name].${ext}`,
-			context: srcDir,
-		},
-	};
-};
-
-export default (env = {}) => {
-	const target = 'Wechat';
-	return smp.wrap({
-		context: resolve(__dirname, '..'),
-		entry: {
-			app: ['./src/app.ts']
-		},
-		output: {
-			filename: '[name].js',
-			publicPath: '/',
-			path: resolve('dist'),
-		},
-		target: Targets[target],
-		module: {
-			rules: [{
+export default smp.wrap({
+	mode: isDev ? 'development' : 'production',
+	context: paths.app,
+	entry: {
+		app: [
+			join(paths.appSrc, 'app.js')
+		]
+	},
+	output: {
+		filename: '[name].js',
+		publicPath: '/',
+		path: paths.appDist,
+	},
+	module: {
+		rules: [
+			{
 				test: /\.js$/,
-				include: /src/,
-				exclude: [
-					/node_modules/
-				],
+				include: paths.appSrc,
+				exclude: paths.appNodeModules,
 				loader: 'happypack/loader?id=js'
 			},
 			{
-				test: /\.tsx$/,
-				enforce: 'pre',
-				exclude: [
-					/node_modules/
-				],
+				test: /\.ts$/,
+				include: paths.appSrc,
+				exclude: paths.appNodeModules,
 				loader: 'happypack/loader?id=ts'
 			},
 			{
-				test: /\.tsx?$/,
-				include: /src/,
-				exclude: /node_modules/,
-				use: [
-					{
-						loader: 'ts-loader',
-						options: {
-							happyPackMode: NODE_ENV !== 'production'
-						}
-					}
-				].filter(v => v && typeof v !== 'boolean')
-			},
-			{
 				test: /\.(scss|wxss)$/,
-				include: /src/,
+				include: paths.appSrc,
+				exclude: paths.appNodeModules,
 				use: [
-					relativeFileLoader('wxss'),
+					relativeFileLoader({ ext: 'wxss' }),
+					{
+						loader: 'css-loader'
+					},
 					{
 						loader: 'postcss-loader'
 					},
@@ -102,101 +67,152 @@ export default (env = {}) => {
 				],
 			},
 			{
-				test: /\.(json|png|jpg|gif|wxs)$/,
-				include: /src/,
+				test: /\.(json|png|jpg|gif)$/,
+				include: paths.appSrc,
+				exclude: paths.appNodeModules,
+				use: relativeFileLoader({
+					loadername: 'url',
+					options: { limit: 8192 }
+				})
+			},
+			{
+				test: /\.wxs$/,
+				include: paths.appSrc,
+				exclude: paths.appNodeModules,
 				use: relativeFileLoader()
 			},
 			{
 				test: /\.(wxml|html)$/,
-				include: /src/,
+				include: paths.appSrc,
+				exclude: paths.appNodeModules,
 				use: [
-					relativeFileLoader('wxml'),
+					relativeFileLoader({ ext: 'wxml' }),
 					{
 						loader: 'wxml-loader',
 						options: {
-							root: srcDir,
+							root: paths.appSrc,
 							enforceRelativePath: true
 						},
 					},
 				],
 			},
-			],
-		},
-		plugins: [
-			new EnvironmentPlugin({
-				NODE_ENV: 'development',
-			}),
-			new FriendlyErrorsWebpackPlugin(),
-			new DefinePlugin({
-				__DEV__: isDev,
-				__ENV__: require(`../config/${Object.keys(env)[0] || 'dev'}.env`)
-			}),
-			new WXAppWebpackPlugin({
-				clear: !isDev,
-				extensions: ['.ts', '.js']
-			}),
-			new optimize.ModuleConcatenationPlugin(),
-			new IgnorePlugin(/vertx/),
-			new StylelintPlugin(),
-			!isDev && new MinifyPlugin(),
-			new CopyPlugin(copyPatterns, {
-				context: srcDir
-			}),
-			new TSLintPlugin({
-				files: [resolve(__dirname, '..', 'src/**/*.ts')]
-			}),
-			new ForkTsCheckerWebpackPlugin({
-				tslint: true,
-				async: false,
-				checkSyntacticErrors: true,
-				watch: [srcDir]
-			}),
-			new HappyPack({
-				id: 'ts',
-				threads: 2,
-				loaders: [
-					{
-						loader: 'cache-loader'
-					},
-					{
-						path: 'ts-loader',
-						query: { happyPackMode: true }
-					}
-				]
-			}),
-			new HappyPack({
-				id: 'js',
-				threads: 2,
-				loaders: [
-					{
-						loader: 'cache-loader'
-					},
-					{
-						loader: 'babel-loader'
-					},
-					{
-						loader: 'eslint-loader'
-					}
-				]
-			}),
-			new BundleAnalyzerPlugin({
-				analyzerHost: "0.0.0.0",
-				analyzerPort: "8888",
-				openAnalyzer: !isDev
-			})
-		].filter(Boolean),
-		devtool: isDev && 'source-map',
-		resolve: {
-			modules: [resolve(__dirname, '..'), 'node_modules'],
-			extensions: ['.ts', '.js'],
-			alias: {
-				'@': resolve(__dirname, '../src'),
-				'@style': resolve(__dirname, '../src', 'styles/index.scss')
-			}
-		},
-		watchOptions: {
-			ignored: /dist|manifest/,
-			aggregateTimeout: 300,
-		},
-	});
-};
+		]
+	},
+	plugins: [
+		new HappyPack({
+			id: 'js',
+			threads: 2,
+			loaders: [
+				{
+					loader: 'babel-loader'
+				},
+				{
+					loader: 'eslint-loader'
+				}
+			]
+		}),
+		new HappyPack({
+            id: 'ts',
+            threads: 2,
+            loaders: [
+                {
+                    path: 'ts-loader',
+                    query: { happyPackMode: true }
+                }
+            ]
+		}),
+		new ForkTsCheckerWebpackPlugin({
+			checkSyntacticErrors: true,
+			tslint: true,
+			// async: false,
+			// watch: [srcDir]
+		}),
+	],
+	resolve: {
+		modules: [paths.appNodeModules], // [resolve(__dirname, '..'), 'node_modules'],
+		extensions: [ '.ts', '.js' ],
+		alias: {
+			'@': paths.appSrc,
+			'@style': join(paths.appSrc, 'styles', 'index.scss')
+		}
+	},
+});
+
+// import { resolve } from 'path';
+// import {
+// 	DefinePlugin,
+// 	EnvironmentPlugin,
+// 	IgnorePlugin,
+// 	optimize
+// } from 'webpack';
+// import WXAppWebpackPlugin, { Targets } from 'wxapp-webpack-plugin';
+// import StylelintPlugin from 'stylelint-webpack-plugin';
+// import TSLintPlugin from 'tslint-webpack-plugin';
+// import CopyPlugin from 'copy-webpack-plugin';
+// import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
+// import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+// import { warmup } from 'thread-loader';
+// import pkg from '../package.json';
+
+// warmup({}, ['ts-loader', 'babel-loader', 'tslint-loader', 'eslint-loader'])
+
+// const copyPatterns = [].concat(pkg.copyWebpack || []).map(
+// 	(pattern) =>
+// 		typeof pattern === 'string' ? {
+// 			from: pattern,
+// 			to: pattern
+// 		} : pattern,
+// );
+
+// const relativeFileLoader = (ext = '[ext]') => {
+// 	return {
+// 		loader: 'file-loader',
+// 		options: {
+// 			useRelativePath: true,
+// 			name: `[name].${ext}`,
+// 			context: srcDir,
+// 		},
+// 	};
+// };
+
+// export default (env = {}) => {
+// 	const target = 'Wechat';
+// 	return smp.wrap({
+// 		target: Targets[target],
+
+// 		plugins: [
+// 			new EnvironmentPlugin({
+// 				NODE_ENV: 'development',
+// 			}),
+// 			new FriendlyErrorsWebpackPlugin(),
+// 			new DefinePlugin({
+// 				__DEV__: isDev,
+// 				__ENV__: require(`../config/${Object.keys(env)[0] || 'dev'}.env`)
+// 			}),
+// 			new WXAppWebpackPlugin({
+// 				clear: !isDev,
+// 				extensions: ['.ts', '.js']
+// 			}),
+// 			new optimize.ModuleConcatenationPlugin(),
+// 			new IgnorePlugin(/vertx/),
+// 			new StylelintPlugin(),
+// 			new CopyPlugin(copyPatterns, {
+// 				context: srcDir
+// 			}),
+// 			new TSLintPlugin({
+// 				files: [resolve(__dirname, '..', 'src/**/*.ts')]
+// 			}),
+
+// 			new BundleAnalyzerPlugin({
+// 				analyzerHost: "0.0.0.0",
+// 				analyzerPort: "8888",
+// 				openAnalyzer: !isDev
+// 			})
+// 		].filter(Boolean),
+// 		devtool: isDev && 'source-map',
+// 		watchOptions: {
+// 			ignored: /dist|manifest/,
+// 			aggregateTimeout: 300,
+// 		},
+// 	});
+// };
